@@ -226,6 +226,26 @@ void loop(void)
         }
       }
     }
+    else if(buttnum == 7){
+      if (pressed) {
+        int current_pos;
+        current_pos = Servo1.read();
+        Servo1.write(current_pos + 30);
+      }
+    }
+    else if(buttnum == 8){
+     if (pressed) {
+        int current_pos;
+        current_pos = Servo1.read();
+        Servo1.write(current_pos - 30);
+      
+     }
+    }
+    else if(buttnum == 3){
+     if (pressed) {
+        Servo1.write(90);
+     }
+    }
     else if(buttnum == 2){
       if (pressed) {
         if(speed > 10){
