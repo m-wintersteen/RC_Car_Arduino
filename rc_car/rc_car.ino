@@ -111,9 +111,18 @@ extern uint8_t packetbuffer[];
 #define Ain1 3
 #define Ain2 5
 // Declare the Servo pin 
-int servoPin = 2; 
+int servoPin = 2;
+// Initial Speed
 int speed = 255;
-Servo Servo1; 
+// Initial Servo Center Angle
+int center = 90;
+// Fine Tune Variables
+bool fineTune = false;
+int fineTuneStep = 1;
+int regStep = 20;
+int currentStep = regStep;
+
+Servo Servo1;
 
 void setup(void)
 {
@@ -196,66 +205,73 @@ void loop(void)
   /* Wait for new data to arrive */
   uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
   if (len == 0) return;
-
-  /* Got a packet! */
-  // printHex(packetbuffer, len);
-
-  // Color
-  if (packetbuffer[1] == 'C') {
-    uint8_t red = packetbuffer[2];
-    uint8_t green = packetbuffer[3];
-    uint8_t blue = packetbuffer[4];
-    Serial.print ("RGB #");
-    if (red < 0x10) Serial.print("0");
-    Serial.print(red, HEX);
-    if (green < 0x10) Serial.print("0");
-    Serial.print(green, HEX);
-    if (blue < 0x10) Serial.print("0");
-    Serial.println(blue, HEX);
-  }
-
+  
   // Buttons
   if (packetbuffer[1] == 'B') {
     uint8_t buttnum = packetbuffer[2] - '0';
     boolean pressed = packetbuffer[3] - '0';
-    
+
+    //Button 1 speed control up
     if(buttnum == 1){
       if (pressed) {
         if(speed < 245){
           speed = speed+10;
         }
+        else if(speed < 255){
+          speed = speed+1
+        }
       }
     }
+    //Button 2 speed control down
+    else if(buttnum == 2){
+      if (pressed) {
+        if(speed > 10){
+          speed = speed-10;
+        }
+        else if(speed > 0){
+          speed = speed-1
+        }
+      }
+    }
+    //Steering buttons 7 and 8
     else if(buttnum == 7){
       if (pressed) {
         int current_pos;
         current_pos = Servo1.read();
-        Servo1.write(current_pos + 30);
+        Servo1.write(current_pos + currentStep);
       }
     }
     else if(buttnum == 8){
      if (pressed) {
         int current_pos;
         current_pos = Servo1.read();
-        Servo1.write(current_pos - 30);
+        Servo1.write(current_pos - currentStep);
       
      }
     }
+    //Center button 3
     else if(buttnum == 3){
      if (pressed) {
         Servo1.write(90);
      }
     }
-    else if(buttnum == 2){
-      if (pressed) {
-        if(speed > 10){
-          speed = speed-10;
+
+    //Fine tune steering button 3
+    else if(buttnum == 4){
+     if (pressed) {
+        if (fineTune) {
+          new_center = Servo1.read();
+          center = new_center;
+          currentStep = regStep;
         }
-      }
+        else {
+          currentStep = fineTuneStep;
+        }
+     }
     }
+    //Drive control buttons 5 and 6
     else if(buttnum == 5){
       if (pressed) {
-        Serial.print(speed);
         analogWrite(Bin1, speed);
         analogWrite(Ain1, speed);
       } else {
@@ -273,76 +289,5 @@ void loop(void)
         analogWrite(Ain2,0);
       }
     }
-    if (pressed) {
-      digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on (HIGH is the voltage level)
-    } else {
-      digitalWrite(LED_BUILTIN, LOW);    // turn the LED off by making the voltage LOW
-      analogWrite(Ain1, 0);
-      analogWrite(Ain2, 0);
-    }
-  }
-
-  // GPS Location
-  if (packetbuffer[1] == 'L') {
-    float lat, lon, alt;
-    lat = parsefloat(packetbuffer+2);
-    lon = parsefloat(packetbuffer+6);
-    alt = parsefloat(packetbuffer+10);
-    Serial.print("GPS Location\t");
-    Serial.print("Lat: "); Serial.print(lat, 4); // 4 digits of precision!
-    Serial.print('\t');
-    Serial.print("Lon: "); Serial.print(lon, 4); // 4 digits of precision!
-    Serial.print('\t');
-    Serial.print(alt, 4); Serial.println(" meters");
-  }
-
-  // Accelerometer
-  if (packetbuffer[1] == 'A') {
-    float x, y, z;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    Serial.print("Accel\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.println();
-  }
-
-  // Magnetometer
-  if (packetbuffer[1] == 'M') {
-    float x, y, z;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    Serial.print("Mag\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.println();
-  }
-
-  // Gyroscope
-  if (packetbuffer[1] == 'G') {
-    float x, y, z;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    Serial.print("Gyro\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.println();
-  }
-
-  // Quaternions
-  if (packetbuffer[1] == 'Q') {
-    float x, y, z, w;
-    x = parsefloat(packetbuffer+2);
-    y = parsefloat(packetbuffer+6);
-    z = parsefloat(packetbuffer+10);
-    w = parsefloat(packetbuffer+14);
-    Serial.print("Quat\t");
-    Serial.print(x); Serial.print('\t');
-    Serial.print(y); Serial.print('\t');
-    Serial.print(z); Serial.print('\t');
-    Serial.print(w); Serial.println();
   }
 }
