@@ -263,9 +263,11 @@ void loop(void)
           new_center = Servo1.read();
           center = new_center;
           currentStep = regStep;
+          fineTune = false;
         }
         else {
           currentStep = fineTuneStep;
+          fineTune = true;
         }
      }
     }
