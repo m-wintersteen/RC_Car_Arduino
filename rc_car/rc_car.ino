@@ -119,7 +119,7 @@ int center = 90;
 // Fine Tune Variables
 bool fineTune = false;
 int fineTuneStep = 1;
-int regStep = 20;
+int regStep = 5;
 int currentStep = regStep;
 
 Servo Servo1;
@@ -218,7 +218,7 @@ void loop(void)
           speed = speed+10;
         }
         else if(speed < 255){
-          speed = speed+1
+          speed = speed+1;
         }
       }
     }
@@ -229,30 +229,45 @@ void loop(void)
           speed = speed-10;
         }
         else if(speed > 0){
-          speed = speed-1
+          speed = speed-1;
         }
       }
     }
     //Steering buttons 7 and 8
     else if(buttnum == 7){
-      if (pressed) {
-        int current_pos;
-        current_pos = Servo1.read();
-        Servo1.write(current_pos + currentStep);
-      }
+      while (pressed  and Servo1.read() < 180) {
+          int current_pos;
+          current_pos = Servo1.read();
+          Servo1.write(current_pos + currentStep);
+
+        uint8_t len = readPacket(&ble, 20);
+        if (packetbuffer[1] == 'B') {
+          uint8_t buttnum = packetbuffer[2] - '0';
+          if(buttnum == 7){
+            pressed = packetbuffer[3] - '0';
+          }
+        }
+      } 
     }
     else if(buttnum == 8){
-     if (pressed) {
+     while (pressed and Servo1.read() > 0) {
         int current_pos;
         current_pos = Servo1.read();
         Servo1.write(current_pos - currentStep);
-      
+        
+      uint8_t len = readPacket(&ble, 20);
+        if (packetbuffer[1] == 'B') {
+          uint8_t buttnum = packetbuffer[2] - '0';
+          if(buttnum == 8){
+            pressed = packetbuffer[3] - '0';
+          }
+        }
      }
     }
     //Center button 3
     else if(buttnum == 3){
      if (pressed) {
-        Servo1.write(90);
+        Servo1.write(center);
      }
     }
 
@@ -260,6 +275,7 @@ void loop(void)
     else if(buttnum == 4){
      if (pressed) {
         if (fineTune) {
+          int new_center;
           new_center = Servo1.read();
           center = new_center;
           currentStep = regStep;
