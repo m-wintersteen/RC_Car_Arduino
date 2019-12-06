@@ -106,6 +106,7 @@ extern uint8_t packetbuffer[];
 */
 /**************************************************************************/
 //Motor Pins
+//EGEN 310 CODE
 #define Bin1 6
 #define Bin2 5
 #define Ain1 3
@@ -207,6 +208,7 @@ void loop(void)
   if (len == 0) return;
   
   // Buttons
+  //EGEN 310 CODE
   if (packetbuffer[1] == 'B') {
     uint8_t buttnum = packetbuffer[2] - '0';
     boolean pressed = packetbuffer[3] - '0';
